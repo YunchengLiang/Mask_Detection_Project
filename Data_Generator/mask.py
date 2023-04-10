@@ -16,7 +16,7 @@ def create_mask(image_path):
     FaceMasker(pic_path,mask_path,show,model).mask()
 
 class FaceMasker:
-    KEY_FACIAL_FEATURES = ('nose bridge', 'chin')
+    KEY_FACIAL_FEATURES = ('nose_bridge', 'chin')
     def __init__(self, face_path, mask_path, show=False, model='hog'):
         self.face_path=face_path
         self.mask_path=mask_path
@@ -37,6 +37,7 @@ class FaceMasker:
             skip=False
             for facial_feature in self.KEY_FACIAL_FEATURES:
                 if facial_feature not in face_landmark:
+                    print(facial_feature)
                     skip=True
                     break
             if skip:
@@ -66,18 +67,20 @@ class FaceMasker:
         #split mask and resize
         width= self._mask_img.width
         height= self._mask_img.height
-        width_ratio = 1.2 #real size mask is wider than the face, so it could cover the face
+        width_ratio = 1.3 #real size mask is wider than the face, so it could cover the face
         new_height = int(np.linalg.norm(nose_v-chin_bottom_v))
 
         #left side of mask
         mask_left_img = self._mask_img.crop((0,0, width//2,  height))
         mask_left_width= self.get_distance_from_point_to_line(chin_left_point,nose_point,chin_bottom_point)
+        print(mask_left_width)
         mask_left_width= int(mask_left_width*width_ratio)
         mask_left_img= mask_left_img.resize((mask_left_width,new_height))
 
         #right side of mask
         mask_right_img = self._mask_img.crop((width//2, 0, width, height))
         mask_right_width= self.get_distance_from_point_to_line(chin_right_point,nose_point,chin_bottom_point)
+        print(mask_right_width)
         mask_right_width= int(mask_right_width*width_ratio)
         mask_right_img= mask_right_img.resize((mask_right_width,new_height))
 
@@ -113,7 +116,7 @@ class FaceMasker:
         point=np.array(point)
         line_point1=np.array(line_point1)
         line_point2=np.array(line_point2)
-        return np.cross(line_point2-line_point1,point-line_point1)/np.norm(line_point2-line_point1)
+        return abs(np.cross(line_point2-line_point1,point-line_point1)/np.linalg.norm(line_point2-line_point1))
 
 if __name__ == '__main__':
     create_mask(image_path)   
