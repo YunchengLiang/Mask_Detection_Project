@@ -104,7 +104,7 @@ class FaceMasker:
 
     def _save(self):
         path_splits=os.path.splitext(self.face_path)
-        new_face_path= path_splits[0] + '_mask' +path_splits[1]
+        new_face_path= path_splits[0] + '_with_mask' +path_splits[1]
         self._face_img.save(new_face_path)
         print(f'saved to {new_face_path}')
 
@@ -118,4 +118,4 @@ class FaceMasker:
 if __name__ == '__main__':
     create_mask(image_path)   
 
-        
+          
