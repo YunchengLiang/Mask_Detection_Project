@@ -4,13 +4,16 @@ import random
 import numpy as np
 import argparse
 from PIL import Image, ImageFile
+from pathlib import Path
 
 mask_base_path=r"C:\Users\87032\OneDrive\Documents\GitHub\Mask_Detection_Project\Data_Generator\images\masks"
 mask_paths=[ os.path.join(mask_base_path,i) for i in os.listdir(mask_base_path)]
 
 def create_mask(image_path):
     pic_path=image_path
-    mask_path= mask_paths[np.random.randint(len(mask_paths))] #randomly choose a mask to wear
+    random_num=np.random.randint(len(mask_paths))
+    print(random_num)
+    mask_path= mask_paths[random_num] #randomly choose a mask to wear
     show=False
     model="hog"
     FaceMasker(pic_path,mask_path,show,model).mask()
@@ -62,25 +65,23 @@ class FaceMasker:
         chin_bottom_point= chin[8]
         chin_bottom_v= np.array(chin_bottom_point)
         chin_left_point= chin[2]
-        chin_right_point= chin[16]    
+        chin_right_point= chin[14]    
 
         #split mask and resize
         width= self._mask_img.width
         height= self._mask_img.height
-        width_ratio = 1.3 #real size mask is wider than the face, so it could cover the face
+        width_ratio = 1.2 #real size mask is wider than the face, so it could cover the face
         new_height = int(np.linalg.norm(nose_v-chin_bottom_v))
 
         #left side of mask
         mask_left_img = self._mask_img.crop((0,0, width//2,  height))
         mask_left_width= self.get_distance_from_point_to_line(chin_left_point,nose_point,chin_bottom_point)
-        print(mask_left_width)
         mask_left_width= int(mask_left_width*width_ratio)
         mask_left_img= mask_left_img.resize((mask_left_width,new_height))
 
         #right side of mask
         mask_right_img = self._mask_img.crop((width//2, 0, width, height))
         mask_right_width= self.get_distance_from_point_to_line(chin_right_point,nose_point,chin_bottom_point)
-        print(mask_right_width)
         mask_right_width= int(mask_right_width*width_ratio)
         mask_right_img= mask_right_img.resize((mask_right_width,new_height))
 
@@ -106,10 +107,11 @@ class FaceMasker:
         self._face_img.paste(mask_img, (box_x, box_y), mask_img)
 
     def _save(self):
-        path_splits=os.path.splitext(self.face_path)
-        new_face_path= path_splits[0] + '_with_mask' +path_splits[1]
-        self._face_img.save(new_face_path)
-        print(f'saved to {new_face_path}')
+        new_face_name="add_mask\with_mask_" +os.path.basename(self.face_path)
+        p = os.path.join(Path(self.face_path).parent,new_face_name)
+        print(p)
+        self._face_img.save(p)
+        print(f'saved to {p}')
 
     @staticmethod
     def get_distance_from_point_to_line(point, line_point1, line_point2):
