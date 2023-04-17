@@ -1,0 +1,8 @@
+opencv-python
+PIL
+numpy
+sklearn 
+matplotlib
+pathlib
+tensorflow==2.8.0
+imutils
