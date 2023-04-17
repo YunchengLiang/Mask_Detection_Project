@@ -1,8 +1,7 @@
 opencv-python
-PIL
-numpy
+numpy==1.21
 sklearn 
 matplotlib
 pathlib
-tensorflow==2.8.0
+tensorflow==2.11.0
 imutils
