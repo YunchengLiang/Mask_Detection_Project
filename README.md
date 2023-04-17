@@ -17,4 +17,6 @@
   6. face_detector folder contains pretrained SSD model for face detection and its weights
   7. In Data_Generator/images/masks, there are the masks used for augmenting the with_mask datasets
   8. In Data_Generator/Downloads/add_mask, there are the augumented with_mask faces using masks, they are then added to the dataset/with_mask folder
+## Requirements:
+  pip install -r requirements.txt
 
