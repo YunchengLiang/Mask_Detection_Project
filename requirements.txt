@@ -4,4 +4,5 @@ sklearn
 matplotlib
 pathlib
 tensorflow==2.11.0
+flask
 imutils
