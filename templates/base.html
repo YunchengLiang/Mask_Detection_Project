@@ -1,0 +1,20 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title%} {% endblock %}</title>
+    {% block link %} {% endblock %}
+    {% block script %} {% endblock %}
+</head>
+<body>
+    <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/dojo">Dojo</a></li>
+        <li><a href="/control">Control</a></li>
+        <li><a href="/user">User</a></li>
+    </ul>
+    {% block body%} {% endblock %}
+</body>
+<footer>
+    <div>this is the end of the page</div>
+</footer>
+</html>

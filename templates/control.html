@@ -1,0 +1,17 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome {{person.name}} </title>
+</head>
+<body>
+    <h1>Welcome {{person.name}}</h1>
+    {% if person.age >=18 %}
+        <div>you are {{person.age}}, you could enter the bar</div>
+    {% else %}
+        <div>you are not 18 yet,  you could not enter the bar</div>
+    {% endif %}
+    {% for song in songs %}
+        <div>singer of {{song.song}} is {{song.singer}}</div>
+    {% endfor %}
+</body>
+</html>
