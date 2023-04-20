@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, flash, redirect, url_for
+from flask import Flask, request, render_template, flash, redirect, url_for, send_file
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -31,11 +31,7 @@ def predict():
         return redirect(url_for('main_page'))
     imagefile = request.files['imagefile']
     filesavepath='online_detector_uploads/'+secure_filename(imagefile.filename)
-    # if user does not select file, browser also submit a empty part without filename
-    if imagefile.filename == '':
-        flash('No selected file')
-        return redirect(url_for('main_page'))
-    
+    error=False
     if imagefile and allowed_file(imagefile.filename):
         filename = secure_filename(imagefile.filename)
         imagefile.save(filesavepath)
@@ -74,8 +70,15 @@ def predict():
                 cv2.rectangle(image, (start_X,start_Y),(end_X,end_Y),color,2)
         outputpath=os.path.join("static/online_detector_results",filename)
         cv2.imwrite(outputpath, image)
+        return render_template('homepage.html', outputImage=filename,error=error)
+    else:
+        error=True
+        return render_template('homepage.html', error=error)
 
-        return render_template('homepage.html', outputImage=filename)
+@app.route('/download/<path:filename>', methods=['GET'])
+def download(filename):
+    # Returning file from appended path
+    return send_file( os.path.join('static/online_detector_results',filename), as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug = True)
