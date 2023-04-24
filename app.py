@@ -118,7 +118,7 @@ def streaming():
 
 #video streaming
 
-video = cv2.VideoCapture(-1)
+video = cv2.VideoCapture(1)
 
 def gen_frames():
     while True:
@@ -158,4 +158,4 @@ def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', threaded=True)
+    app.run(host='0.0.0.0', port=os.environ.get('PORT'), threaded=True)
