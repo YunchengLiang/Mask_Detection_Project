@@ -118,9 +118,10 @@ def streaming():
 
 #video streaming
 
-video = cv2.VideoCapture(1)
+
 
 def gen_frames():
+    video = cv2.VideoCapture(0)
     while True:
         success, image = video.read()
         if not success:
