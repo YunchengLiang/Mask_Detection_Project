@@ -1,6 +1,6 @@
 opencv-python
 numpy==1.21
-sklearn 
+scikit-learn
 matplotlib
 pathlib
 tensorflow==2.11.0
