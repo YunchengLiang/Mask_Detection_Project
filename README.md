@@ -2,7 +2,8 @@
 ## Support both image and video real time face mask detection:
   1. For local image face mask detection, use detect_mask_from_image.py
   2. For local video streaming face mask detection, use detect_mask_from_video.py
-  3. The website for both image and video streaming mask detection was built by Flask framework, to test locally, run 'python app.py'
+  3. The website for both image and video streaming mask detection was built by Flask framework,    
+     to test locally, run 'python app.py'
 ## Two-Stage Model Architecture:
   1. Using pretrained SSD to detect faces
   2. Once faces are detected, feed into mobilenet-v2 finetuned for classification of "face with mask" vs "face without mask" 
