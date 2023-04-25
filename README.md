@@ -1,9 +1,10 @@
 # Mask_Detection_Project
-## Support both image and video real time face mask detection:
+## Support both image and video real time face mask detection end-to-end:
   1. For local image face mask detection, use detect_mask_from_image.py
   2. For local video streaming face mask detection, use detect_mask_from_video.py
-  3. The website for both image and video streaming mask detection was built by Flask framework,    
-     to test locally, run 'python app.py'
+  3. The website for above two functions was built using Flask framework     
+  4. For local standalone test, run 'python app.py'
+  5. For deployment on Heroku, change the filename under .github/workflows to main.yaml and replace the "email, heroku_api_key, heroku_app_name" to one's own. A docker image will be automatically regenerated every time a commit happens and pushed to Heroku. 
 ## Two-Stage Model Architecture:
   1. Using pretrained SSD to detect faces
   2. Once faces are detected, feed into mobilenet-v2 finetuned for classification of "face with mask" vs "face without mask" 
