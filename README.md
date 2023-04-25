@@ -1,4 +1,5 @@
 # Mask_Detection_Project
+![demoimage_both4](https://user-images.githubusercontent.com/107207371/234141102-8bfef17d-e0cb-4c07-8528-aa621a658cab.jpg)
 ## Support both image and video real time face mask detection end-to-end:
   1. For local image face mask detection, use detect_mask_from_image.py
   2. For local video streaming face mask detection, use detect_mask_from_video.py
