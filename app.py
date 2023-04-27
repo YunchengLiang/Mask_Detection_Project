@@ -11,6 +11,10 @@ import os
 from celery import Celery
 from redis import Redis, ConnectionPool
 
+from collections import Counter
+from celery.result import AsyncResult
+from celery.utils.log import get_task_logger
+
 redis_config = {
     'host': 'localhost',
     'port': 6379,
@@ -22,11 +26,16 @@ redis=Redis(connection_pool=redis_pool)
 
 
 app = Flask(__name__)
-
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_TEST_RESULT_EXPIRES'] = 300
+app.config['CELERY_CONCURRENCY'] = 1
 def make_celery(app):
-    celery = Celery(app.name)
-    celery.config_from_object('celeryconfig') 
-    celery.conf.update(app.config)
+    celery = Celery(app.name,app.import_name,
+                    backend=app.config['CELERY_RESULT_BACKEND'],
+                    broker=app.config['CELERY_BROKER_URL'],
+                    result_expires=app.config['CELERY_TEST_RESULT_EXPIRES'],
+                    concurrency=app.config['CELERY_CONCURRENCY'])
     TaskBase = celery.Task
     class ContextTask(TaskBase):
         abstract = True
@@ -43,8 +52,8 @@ weightsPath= os.path.join("face_detector","res10_300x300_ssd_iter_140000.caffemo
 net= cv2.dnn.readNet(prototxtPath, weightsPath)
 model= load_model('mask_detector.model')
 
-@celery.task(bind=True)
-def detect_from_image(self, image, net, model, filename):
+@celery.task(name='celery.detect_from_image')
+def detect_from_image(image, net, model, filename):
     (h,w)= image.shape[:2]
     blob= cv2.dnn.blobFromImage(image,1.0,(300,300),(104.0,177.0,123.0))#normalization
 
@@ -78,7 +87,7 @@ def detect_from_image(self, image, net, model, filename):
             cv2.rectangle(image, (start_X,start_Y),(end_X,end_Y),color,2)
     outputpath=os.path.join("static/online_detector_results",filename)
     cv2.imwrite(outputpath, image)
-    return 
+    return filename
 
 
 
@@ -133,11 +142,14 @@ def predict():
         filename = secure_filename(imagefile.filename)
         imagefile.save(filesavepath)
         image= cv2.imread(filesavepath)
-        detect_from_image.delay(image, net, model, filename) 
-        return render_template('homepage.html', outputImage=filename,error=error)
+        task  = detect_from_image.delay(image, net, model, filename)
+        async_result = AsyncResult(id=task.task_id, app=celery)
+        processing_result = async_result.get()
+        return render_template('homepage.html', outputImage=processing_result,error=error)
     else:
         error=True
         return render_template('homepage.html', error=error)
+    
 
 @app.route('/download/<path:filename>', methods=['GET'])
 def download(filename):
@@ -190,6 +202,7 @@ def gen_frames():
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
+#celery -A app.celery worker --loglevel=info
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT'), threaded=True)
+    app.run(host="0.0.0.0",port=8999,debug=True)
+    #app.run(host='0.0.0.0', port=os.environ.get('PORT'), threaded=True)
