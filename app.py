@@ -14,46 +14,53 @@ from redis import Redis, ConnectionPool
 from collections import Counter
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
+from flask_celery import make_celery
+import config
 
-redis_config = {
-    'host': 'localhost',
-    'port': 6379,
-    'db': 0,
-    'password': ''
-}
-redis_pool= ConnectionPool(**redis_config)
-redis=Redis(connection_pool=redis_pool)
 
 
 app = Flask(__name__)
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-app.config['CELERY_TEST_RESULT_EXPIRES'] = 300
-app.config['CELERY_CONCURRENCY'] = 1
-def make_celery(app):
-    celery = Celery(app.name,app.import_name,
-                    backend=app.config['CELERY_RESULT_BACKEND'],
-                    broker=app.config['CELERY_BROKER_URL'],
-                    result_expires=app.config['CELERY_TEST_RESULT_EXPIRES'],
-                    concurrency=app.config['CELERY_CONCURRENCY'])
-    TaskBase = celery.Task
-    class ContextTask(TaskBase):
-        abstract = True
-        def __call__(self,*args,**kwargs):
-            with app.app_context():
-                return TaskBase.__call__(self,*args,**kwargs)
-    celery.Task=ContextTask
-    return celery
+app.config.from_object(config)
 
-celery= make_celery(app)
+celery = make_celery(app)
+# redis_config = {
+#     'host': 'localhost',
+#     'port': 6379,
+#     'db': 0,
+#     'password': ''
+# }
+# redis_pool= ConnectionPool(**redis_config)
+# redis=Redis(connection_pool=redis_pool)
+
 
 prototxtPath= os.path.join("face_detector","deploy.prototxt")
 weightsPath= os.path.join("face_detector","res10_300x300_ssd_iter_140000.caffemodel")
 net= cv2.dnn.readNet(prototxtPath, weightsPath)
 model= load_model('mask_detector.model')
 
+
+@app.route('/', methods=['POST'])
+def predict():
+    if 'imagefile' not in request.files:
+        flash('No file part')
+        return redirect(url_for('main_page'))
+    imagefile = request.files['imagefile']
+    filesavepath='online_detector_uploads/'+secure_filename(imagefile.filename)
+    error=False
+    if imagefile and allowed_file(imagefile.filename):
+        filename = secure_filename(imagefile.filename)
+        imagefile.save(filesavepath)
+        task  = detect_from_image.delay(filesavepath, filename)
+        async_result = AsyncResult(id=task.task_id, app=celery)
+        processing_result = async_result.get()
+        return render_template('homepage.html', outputImage=processing_result,error=error)
+    else:
+        error=True
+        return render_template('homepage.html', error=error)
+
 @celery.task(name='celery.detect_from_image')
-def detect_from_image(image, net, model, filename):
+def detect_from_image(filesavepath, filename):
+    image= cv2.imread(filesavepath)
     (h,w)= image.shape[:2]
     blob= cv2.dnn.blobFromImage(image,1.0,(300,300),(104.0,177.0,123.0))#normalization
 
@@ -91,7 +98,7 @@ def detect_from_image(image, net, model, filename):
 
 
 
-def detect_and_predict_mask(self,frame,faceNet,maskModel):
+def detect_and_predict_mask(frame,faceNet,maskModel):
     (h,w)= frame.shape[:2]
     blob= cv2.dnn.blobFromImage(frame,1.0,(300,300),(104.0,177.0,123.0))#normalization
     faceNet.setInput(blob)
@@ -129,26 +136,6 @@ def allowed_file(filename):
 @app.route('/', methods=['GET'])
 def main_page():
     return render_template('homepage.html')
-
-@app.route('/', methods=['POST'])
-def predict():
-    if 'imagefile' not in request.files:
-        flash('No file part')
-        return redirect(url_for('main_page'))
-    imagefile = request.files['imagefile']
-    filesavepath='online_detector_uploads/'+secure_filename(imagefile.filename)
-    error=False
-    if imagefile and allowed_file(imagefile.filename):
-        filename = secure_filename(imagefile.filename)
-        imagefile.save(filesavepath)
-        image= cv2.imread(filesavepath)
-        task  = detect_from_image.delay(image, net, model, filename)
-        async_result = AsyncResult(id=task.task_id, app=celery)
-        processing_result = async_result.get()
-        return render_template('homepage.html', outputImage=processing_result,error=error)
-    else:
-        error=True
-        return render_template('homepage.html', error=error)
     
 
 @app.route('/download/<path:filename>', methods=['GET'])
@@ -204,5 +191,5 @@ def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 #celery -A app.celery worker --loglevel=info
 if __name__ == '__main__':
-    app.run(host="0.0.0.0",port=8999,debug=True)
+    app.run(host="0.0.0.0",debug=True)
     #app.run(host='0.0.0.0', port=os.environ.get('PORT'), threaded=True)
